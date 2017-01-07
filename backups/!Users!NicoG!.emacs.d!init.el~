@@ -22,13 +22,34 @@
 
 (defvar myPackages
   '(better-defaults
-    elpy
-    material-theme))
+    elpy  ;; better python mode
+    flycheck ;; better python syntax checking
+    py-autopep8 ;; python script fixing
+    )
+  )
+;;    material-theme))
 
 (elpy-enable)
 
 ;; CUSTOMIZATION
+
 ;; --------------------------------------
+;; python suff
+
+(require 'py-autopep8)
+(add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save)
+
+(elpy-use-ipython)
+
+(when (memq window-system '(mac ns))  ;; otherwise I get the wrong python distro on a Mac
+  (exec-path-from-shell-initialize))
+
+(when (require 'flycheck nil t)
+  (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
+  (add-hook 'elpy-mode-hook 'flycheck-mode))
+
+;; --------------------------------------
+;; themes and TeX stuff
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -38,13 +59,44 @@
  '(TeX-source-correlate-method (quote synctex))
  '(TeX-source-correlate-mode t)
  '(TeX-source-correlate-start-server t)
+ '(ansi-color-names-vector
+   ["#3F3F3F" "#CC9393" "#7F9F7F" "#F0DFAF" "#8CD0D3" "#DC8CC3" "#93E0E3" "#DCDCCC"])
  '(custom-safe-themes
    (quote
-    ("fe230d2861a13bb969b5cdf45df1396385250cc0b7933b8ab9a2f9339b455f5c" default)))
+    ("67a0265e2497207f5f9116c4d2bfbbab4423055e3ab1fa46ea6bd56f7e322f6a" "fe230d2861a13bb969b5cdf45df1396385250cc0b7933b8ab9a2f9339b455f5c" default)))
+ '(fci-rule-color "#383838")
  '(inhibit-startup-echo-area-message "NicoG")
  '(inhibit-startup-screen t)
  '(initial-buffer-choice "~/.emacs.d/init.el")
- '(package-selected-packages (quote (exec-path-from-shell anaconda-mode auctex))))
+ '(nrepl-message-colors
+   (quote
+    ("#CC9393" "#DFAF8F" "#F0DFAF" "#7F9F7F" "#BFEBBF" "#93E0E3" "#94BFF3" "#DC8CC3")))
+ '(package-selected-packages
+   (quote
+    (py-autopep8 flycheck exec-path-from-shell anaconda-mode auctex)))
+ '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838")))
+ '(vc-annotate-background "#2B2B2B")
+ '(vc-annotate-color-map
+   (quote
+    ((20 . "#BC8383")
+     (40 . "#CC9393")
+     (60 . "#DFAF8F")
+     (80 . "#D0BF8F")
+     (100 . "#E0CF9F")
+     (120 . "#F0DFAF")
+     (140 . "#5F7F5F")
+     (160 . "#7F9F7F")
+     (180 . "#8FB28F")
+     (200 . "#9FC59F")
+     (220 . "#AFD8AF")
+     (240 . "#BFEBBF")
+     (260 . "#93E0E3")
+     (280 . "#6CA0A3")
+     (300 . "#7CB8BB")
+     (320 . "#8CD0D3")
+     (340 . "#94BFF3")
+     (360 . "#DC8CC3"))))
+ '(vc-annotate-very-old-color "#DC8CC3"))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

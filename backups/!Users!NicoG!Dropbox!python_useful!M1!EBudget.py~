@@ -1,0 +1,728 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Dec 15:00:00 2016
+
+@author: NicoG
+"""
+
+import sys
+import os
+import matplotlib.pyplot as plt
+import numpy as np
+# from numpy import shape
+import netCDF4 as nc
+import time
+import getpass
+import pickle
+from matplotlib import rc
+from pylab import get_current_fig_manager
+if (sys.version_info > (3, 0)):  # Then Python 3 is running
+    sys.path.append('/Users/NicoG/Dropbox/python_useful/obngfft')
+    import ngobfftPy3 as tf
+else:  # Then is has to be Python 2
+    sys.path.append('/Users/NicoG/Dropbox/python_useful/obngfft')
+    import ngobfft as tf
+# %% NG start -----------------------------------------------------------------
+
+
+class dictionary_to_class:
+    def __init__(self, **entries):
+        self.__dict__.update(entries)
+# %% --------------------------------------------------------------------------
+
+
+def int_vol(dx, dz, u):
+    uint1 = np.trapz(u, dx=dz, axis=1)
+    uint2 = np.trapz(uint1, dx=dx, axis=1)
+    return uint2
+# %% --------------------------------------------------------------------------
+
+
+def DerivLoad(fID, uVar, to_load, kbott, plst):
+    """ Computing the power of a given term whose derivative is stored.
+    fID is the file ID
+    uVar is the component (uVar, vVar, wVar, bVar)
+    deriv_to_load is the name (string) of the derivative at stake.
+    Note that for bVar, conversion of derivative has to be done externally.
+    """
+    drvtv = fID.variables[to_load][plst[3]:, kbott:, plst[1]:plst[0]+1].copy()
+    return uVar*drvtv
+# %% --------------------------------------------------------------------------
+
+
+def DerivFour(x, uVar, K, n):
+    """ Power of a term when x-derivatives are involved;
+    Need to multiply by nu outside
+    x: (1D) array along which the fft is performed
+    uVar: the quantity to multiply and derive
+    K: the (2D) array of wave numbers
+    n: the order of derivative (hdegs)
+    """
+    FFF = tf.obfft(x, uVar, 2)
+    k = tf.k_of_x(x)
+    dnudxn = np.real(tf.obifft(k, FFF*(1j*K)**n, 2))
+    return uVar*dnudxn
+# %% --------------------------------------------------------------------------
+
+
+def print_elpsd(str_step, tic):
+    print('{0} completed, elapsed time = {1: 4d} s'.format(str_step,
+          int(time.time() - tic)))
+    return time.time()
+# %% --------------------------------------------------------------------------
+
+
+def print_int_elpsd(str_step, counter, ncounters, tic):
+    print('    {0}: {1: >3d}% done, {2: 4d} s elapsed'.format(str_step,
+          int((100*counter)/ncounters), int(time.time() - tic)))
+    counter += 1
+    return counter
+# %% --------------------------------------------------------------------------
+
+
+def MEBTerms(s, setup, plst):  # Mechanichal Energy Budget Terms
+
+    Var = {}  # this dictionary will be the recipient of the loaded variables
+
+    tic = time.time()
+    tic_strt = time.time()
+
+    # these dictionaries will be the recipients of the file IDs
+    fID_XZ = {}
+    fID_d = {}
+    fID_td = {}
+
+    # locate the processor containing the bottom of the box
+    npb = plst[2]//(s.nz//s.np)
+
+    ntint = s.nites//s.sk_it + 1 - plst[3]
+    nxint = plst[0] - plst[1] + 1
+    if s.np > 1:
+        nzint = (s.np - npb) * (s.nz//s.np) + 1
+    else:
+        nzint = s.nnz - plst[2]
+
+    ts_shp = (ntint, )  # shape of each time series
+    PHIpKE = np.zeros(ts_shp)
+    PHImKE = np.zeros(ts_shp)
+    PHIzKE = np.zeros(ts_shp)
+    PHIpPE = np.zeros(ts_shp)
+    PHImPE = np.zeros(ts_shp)
+    PHIzPE = np.zeros(ts_shp)
+    AdPEtot = np.zeros(ts_shp)
+    GSPtot = np.zeros(ts_shp)
+    LSPtot = np.zeros(ts_shp)
+    P2Ktot = np.zeros(ts_shp)
+    dtKEtot = np.zeros(ts_shp)
+    dtPEtot = np.zeros(ts_shp)
+    LDzKEtot = np.zeros(ts_shp)
+    HDzKEtot = np.zeros(ts_shp)
+    LDhKEtot = np.zeros(ts_shp)
+    HDhKEtot = np.zeros(ts_shp)
+    LDzPEtot = np.zeros(ts_shp)
+    HDzPEtot = np.zeros(ts_shp)
+    LDhPEtot = np.zeros(ts_shp)
+    HDhPEtot = np.zeros(ts_shp)
+
+    to_int_shp = (ntint, nzint, nxint)
+    phiKE_xpls = np.zeros((ntint, nzint))
+    phiKE_xmns = np.zeros((ntint, nzint))
+    phiKE_zmns = np.zeros((ntint, nxint))
+    phiPE_xpls = np.zeros((ntint, nzint))
+    phiPE_xmns = np.zeros((ntint, nzint))
+    phiPE_zmns = np.zeros((ntint, nxint))
+    AdPE = np.zeros(to_int_shp)
+    GSP = np.zeros(to_int_shp)
+    LSP = np.zeros(to_int_shp)
+    LC = np.zeros(to_int_shp)
+    P2K = np.zeros(to_int_shp)
+    dtKE = np.zeros(to_int_shp)
+    dtPE = np.zeros(to_int_shp)
+    LDzKE = np.zeros(to_int_shp)
+    HDzKE = np.zeros(to_int_shp)
+    LDhKE = np.zeros((ntint, nzint, s.nx))
+    HDhKE = np.zeros((ntint, nzint, s.nx))
+    LDzPE = np.zeros(to_int_shp)
+    HDzPE = np.zeros(to_int_shp)
+    LDhPE = np.zeros((ntint, nzint, s.nx))
+    HDhPE = np.zeros((ntint, nzint, s.nx))
+
+    k = tf.k_of_x(s.x)
+
+    # open and read for each file
+    for pr in range(npb, s.np):
+
+        print(' ')
+        print('---------------- Proc #{0:02d}/{1:02d} ----------------'.format(
+              pr-npb+1, s.np-npb))
+        print(' ')
+
+        prs = '{0:02d}'.format(pr)  # string version of pr, 2 digits
+
+        if s.np > 1:
+            kb = pr*s.nz//s.np  # bottom z index of one proc: proc# * pts/proc
+            kt = (pr+1)*s.nz//s.np  # top z index of one proc
+            kbi = (pr-npb)*s.nz//s.np  # bottom z index for integrands
+            kti = (pr-npb+1)*s.nz//s.np  # top z index for integrands
+            if pr == s.np-1:
+                kt += 1
+                kti += 1
+        else:  # then these numbers have to be the CV bounds
+            kb = plst[2]
+            kt = s.nnz
+            kbi = 0  # bottom z index of one proc for integrands
+            kti = nzint  # top z index of one proc for integrands
+
+        if s.np == 1:  # string version of pr, as suffix of file name
+            npstr = ''
+        else:
+            npstr = '_0' + prs
+
+        # bottom boundary
+        if s.np > 1:  # bottom of a CV is the bottom of a processor domain
+            kbott = 0
+        else:  # bottom of CV is the actual bottom of CV as prescribed
+            kbott = plst[2]
+
+        # %% Loading variables ------------------------------------------------
+        print('Start loading, proc #' + prs)
+
+        fID_XZ[prs] = nc.Dataset(setup + '/2D/XZ' + npstr + '.nc', 'r')
+        fID_d[prs] = nc.Dataset(setup + '/2D/derivs' + npstr + '.nc', 'r')
+        fID_td[prs] = nc.Dataset(setup + '/2D/t_derivs' + npstr + '.nc', 'r')
+
+        # print(setup + '/2D/XZ' + npstr + '.nc')
+        # print(fID_d[prs].variables.keys())
+
+        for vv in ['u', 'v', 'w', 's1']:
+            Var[vv] = (fID_XZ[prs].variables[vv+'Var'][plst[3]:, kbott:,
+                       :].copy())
+            # tic = print_elpsd('loading ' + vv + ', proc #' + prs, tic)
+
+        bVar = -s.g / s.rho_0 * (Var['s1'][:, :, :] - s.RLoc[kb:kt, :])
+        bN2 = bVar / s.N2Loc[kb:kt, :]
+
+        if pr == npb:
+            t = fID_XZ[prs].variables['tVar'][plst[3]:].copy()
+
+        tic = print_elpsd('loading vars', tic)
+
+        # %% ------------------------------------------------------------------
+        # Flux calculations
+
+        if pr == npb:  # works no matter how many procs there are
+            pVar_zmns = (fID_d[prs].variables['pVar'][plst[3]:, kbott,
+                         plst[1]:plst[0]+1].copy())
+            phiKE_zmns = -pVar_zmns * Var['w'][:, 0, plst[1]:plst[0]+1]
+            phiPE_zmns = -(0.5 * bVar[:, 0, plst[1]:plst[0]+1] *
+                           bN2[:, 0, plst[1]:plst[0]+1]
+                           ) * Var['w'][:, 0, plst[1]:plst[0]+1]
+            # the - sign above is because of orientation of outward normal
+
+        # right boundary
+        pVar_xpls = (fID_d[prs].variables['pVar'][plst[3]:, kbott:,
+                     plst[0]].copy())
+        phiKE_xpls[:, kbi:kti] = pVar_xpls * Var['u'][:, :, plst[0]]
+        phiPE_xpls[:, kbi:kti] = (0.5 * bVar[:, :, plst[0]] *
+                                  bN2[:, :, plst[0]]
+                                  )*Var['u'][:, :, plst[0]]
+        # u, v, etc. were only loaded from plst[3]
+
+        # left boundary
+        pVar_xmns = (fID_d[prs].variables['pVar'][plst[3]:, kbott:,
+                     plst[1]].copy())
+        phiKE_xmns[:, kbi:kti] = -pVar_xmns * Var['u'][:, :, plst[1]]
+        phiPE_xmns[:, kbi:kti] = -(0.5 * bVar[:, :, plst[1]] *
+                                   bN2[:, :, plst[1]]
+                                   )*Var['u'][:, :, plst[1]]
+        # the - sign above is because of orientation of outward normal
+
+        # Zero flux occurs through top surface
+
+        # %% ------------------------------------------------------------------
+        # Advection of PE
+
+        # cf. Notability sheet
+        dN2dx = s.S2Loc[kb:kt, plst[1]:plst[0]+1] / (s.dltH * s.Lz)
+        dN2dz = s.d2Rdz2[kb:kt, plst[1]:plst[0]+1] * (- s.g / s.rho_0)
+        AdPE[:, kbi:kti, :] = (0.5 * bN2[:, :, plst[1]:plst[0]+1]**2 *
+                               (Var['u'][:, :, plst[1]:plst[0]+1] * dN2dx +
+                               Var['w'][:, :, plst[1]:plst[0]+1] * dN2dz))
+
+        # %% ------------------------------------------------------------------
+        # Geostrophic Shear Production (GSP)
+
+        # GSP = 0.*Var['u']
+        GSP[:, kbi:kti, :] = (Var['v'][:, :, plst[1]:plst[0]+1] *
+                              Var['w'][:, :, plst[1]:plst[0]+1] *
+                              s.S2Loc[kb:kt, plst[1]:plst[0]+1] / s.f)
+
+        # %% ------------------------------------------------------------------
+        # Lateral Conversion (LC)
+
+        LC[:, kbi:kti, :] = (Var['u'][:, :, plst[1]:plst[0]+1] *
+                             bN2[:, :, plst[1]:plst[0]+1] *
+                             s.S2Loc[kb:kt, plst[1]:plst[0]+1])
+
+        # %% ------------------------------------------------------------------
+        # Lateral Conversion (LC)
+
+        P2K[:, kbi:kti, :] = (Var['w'][:, :, plst[1]:plst[0]+1] *
+                              bVar[:, :, plst[1]:plst[0]+1])
+
+        # %% ------------------------------------------------------------------
+        # Lateral Shear Production (LSP)
+
+        LSP[:, kbi:kti, :] = (Var['v'][:, :, plst[1]:plst[0]+1] *
+                              Var['u'][:, :, plst[1]:plst[0]+1] *
+                              s.f * s.RoGLoc[kb:kt, plst[1]:plst[0]+1])
+
+        tic = print_elpsd('Buch of terms', tic)
+
+        # %% ------------------------------------------------------------------
+        # Compute dissipation terms and dEdt
+
+        K, M = np.meshgrid(k, s.z[kb:kt])
+
+        counter = 1
+        print('Proc #' + prs + ', start dissipation')
+
+        d1 = str(2*s.hdeg)
+        d2 = str(2*s.hdeg2)
+
+        # print(s.nuh)
+        # print(s.nuz2)
+
+        for ii in ['u', 'v', 'w']:
+            # dzNm = 'd2'+ii+'dz2'
+
+            dotProd = Var[ii][:, :, plst[1]:plst[0]+1]
+            ToFD = Var[ii]
+
+            dtKE[:, kbi:kti, :] += DerivLoad(fID_td[prs], dotProd, 'd'+ii+'dt',
+                                             kbott, plst)
+
+            LDzKE[:, kbi:kti, :] -= DerivLoad(fID_d[prs], dotProd,
+                                              'd2'+ii+'dz'+d1, kbott, plst)
+            if s.nuh == 0.:
+                LDhKE[:, kbi:kti, :] -= 0.
+            else:
+                LDhKE[:, kbi:kti, :] -= DerivFour(s.x, ToFD, K, int(d1))
+            counter = print_int_elpsd('Dissipation', counter, 8, tic)
+
+            if s.nuz2 == 0.:
+                HDzKE[:, kbi:kti, :] += 0.
+            else:
+                HDzKE[:, kbi:kti, :] += DerivLoad(fID_d[prs], dotProd,
+                                                  'd4'+ii+'dz'+d2, kbott, plst)
+
+            HDhKE[:, kbi:kti, :] += DerivFour(s.x, ToFD, K, int(d2))
+            counter = print_int_elpsd('Dissipation', counter, 8, tic)
+
+        dtPE[:, kbi:kti, :] += (DerivLoad(fID_td[prs],
+                                -s.g*bN2[:, :, plst[1]:plst[0]+1]/s.rho_0,
+                                'ds1dt', kbott, plst))
+
+        LDzPE[:, kbi:kti, :] -= (DerivLoad(fID_d[prs],
+                                 -s.g*bN2[:, :, plst[1]:plst[0]+1]/s.rho_0,
+                                 'd2s1dz'+d1, kbott, plst))
+
+        if s.nuh == 0:
+            LDhPE[:, kbi:kti, :] = 0.
+        else:
+            LDhPE[:, kbi:kti, :] -= DerivFour(s.x, bVar, K, int(d1)
+                                              ) / s.N2Loc[kb:kt, :]
+        counter = print_int_elpsd('Dissipation', counter, 8, tic)
+
+        if s.nuz2 == 0.:
+            HDzPE[:, kbi:kti, :] = 0.
+        else:
+            HDzPE[:, kbi:kti, :] = (DerivLoad(fID_d[prs],
+                                    -s.g*bN2[:, :, plst[1]:plst[0]+1]/s.rho_0,
+                                    'd4s1dz'+d2, kbott, plst))
+
+        HDhPE[:, kbi:kti, :] = DerivFour(s.x, bVar, K, int(d2)
+                                         ) / s.N2Loc[kb:kt, :]
+        counter = print_int_elpsd('Dissipation', counter, 8, tic)
+
+        # dissipation of the thermal wind
+        # d2TWdz2 = s.S2Loc / (s.f*s.dltH*s.Lz)
+        # LDh += - s.g / s.rho_0 * s.d2Rdx2[kb:kt, :] * bN2[:, :, :]
+        #               # + s.d2TWdx2[kb:kt, :] * Var['v'][:, :, :])
+        # LDz += - s.g / s.rho_0 * s.d2Rdz2[kb:kt, :] * bN2[:, :, :]
+        # + d2TWdz2[kb:kt, :] * Var['v'][:, :, :]
+
+        tic = print_elpsd('Dissipation and dEdt', tic)
+
+        # %% ------------------------------------------------------------------
+        fID_XZ[prs].close()
+        fID_d[prs].close()
+        fID_td[prs].close()
+
+    # %%
+    # %% Integrations
+    # integrate and add the three paths of energy flux (taking CW path)
+    PHImKE = np.trapz(phiKE_xmns, dx=s.dz, axis=1)
+    PHIpKE = np.trapz(phiKE_xpls, dx=s.dz, axis=1)
+    PHIzKE = np.trapz(phiKE_zmns, dx=s.dx, axis=1)
+    PHImPE = np.trapz(phiPE_xmns, dx=s.dz, axis=1)
+    PHIpPE = np.trapz(phiPE_xpls, dx=s.dz, axis=1)
+    PHIzPE = np.trapz(phiPE_zmns, dx=s.dx, axis=1)
+
+    # volume integrations
+    AdPEtot = int_vol(s.dx, s.dz, AdPE)
+    GSPtot = int_vol(s.dx, s.dz, GSP)
+    LCtot = int_vol(s.dx, s.dz, LC)
+    P2Ktot = int_vol(s.dx, s.dz, P2K)
+    LSPtot = int_vol(s.dx, s.dz, LSP)
+    dtKEtot = int_vol(s.dx, s.dz, dtKE)
+    dtPEtot = int_vol(s.dx, s.dz, dtPE)
+    LDzKEtot = int_vol(s.dx, s.dz, s.nuz * LDzKE)
+    HDzKEtot = int_vol(s.dx, s.dz, s.nuz2 * HDzKE)
+    LDhKEtot = int_vol(s.dx, s.dz, s.nuh * LDhKE[:, :, plst[1]:plst[0]+1])
+    HDhKEtot = int_vol(s.dx, s.dz, s.nuh2 * HDhKE[:, :, plst[1]:plst[0]+1])
+    LDzPEtot = int_vol(s.dx, s.dz, s.nuz * LDzPE)
+    HDzPEtot = int_vol(s.dx, s.dz, s.nuz2 * HDzPE)
+    LDhPEtot = int_vol(s.dx, s.dz, s.nuh * LDhPE[:, :, plst[1]:plst[0]+1])
+    HDhPEtot = int_vol(s.dx, s.dz, s.nuh2 * HDhPE[:, :, plst[1]:plst[0]+1])
+
+    tic = print_elpsd('Integrations', tic)
+
+    # %%
+    # Final step: place everything in a dictionary and save it
+    os.system('rm {0}/KEBterms.npz'.format(setup))
+    np.savez('{0}/KEBterms.npz'.format(setup),
+             t=t,
+             pUpls=PHIpKE,
+             pUmns=PHImKE,
+             pWmns=PHIzKE,
+             GSP=GSPtot,
+             LSP=LSPtot,
+             K2P=-P2Ktot,
+             dEdt=dtKEtot,
+             LDz=LDzKEtot,
+             HDz=HDzKEtot,
+             LDh=LDhKEtot,
+             HDh=HDhKEtot)
+
+    os.system('rm {0}/PEBterms.npz'.format(setup))
+    np.savez('{0}/PEBterms.npz'.format(setup),
+             t=t,
+             pUpls=PHIpPE,
+             pUmns=PHImPE,
+             pWmns=PHIzPE,
+             AdPE=AdPEtot,
+             LC=LCtot,
+             P2K=P2Ktot,
+             dEdt=dtPEtot,
+             LDz=LDzPEtot,
+             HDz=HDzPEtot,
+             LDh=LDhPEtot,
+             HDh=HDhPEtot)
+
+    dic_of_KE_terms = {'t': t,
+                       'pUpls': PHIpKE,
+                       'pUmns': PHImKE,
+                       'pWmns': PHIzKE,
+                       'GSP': GSPtot,
+                       'LSP': LSPtot,
+                       'K2P': -P2Ktot,
+                       'dEdt': dtKEtot,
+                       'LDz': LDzKEtot,
+                       'HDz': HDzKEtot,
+                       'LDh': LDhKEtot,
+                       'HDh': HDhPEtot}
+
+    dic_of_PE_terms = {'t': t,
+                       'pUpls': PHIpPE,
+                       'pUmns': PHImPE,
+                       'pWmns': PHIzPE,
+                       'AdPE': AdPEtot,
+                       'LC': LCtot,
+                       'P2K': P2Ktot,
+                       'dEdt': dtPEtot,
+                       'LDz': LDzPEtot,
+                       'HDz': HDzPEtot,
+                       'LDh': LDhPEtot,
+                       'HDh': HDhPEtot}
+
+    # %%
+
+    time_tot = time.time() - tic_strt
+    mins = int(time_tot/60)
+    secs = int(time_tot - 60*mins)
+
+    print(' ')
+    print('          ***********')
+    print(' ')
+    print('All done! Elapsed time = {0:3d}:{0:02d}'.format(mins, secs))
+    print(' ')
+    print('          ***********')
+    print(' ')
+
+    # %%
+    return dic_of_KE_terms, dic_of_PE_terms
+# %% --------------------------------------------------------------------------
+
+
+def plot_one_budget(KET, PET, MET, s, printON, base, nm, t_strt):
+
+    # rc('text', usetex=True)
+    font = {'size': 16}
+    rc('font', **font)
+    rc('lines', linewidth=2)
+    # lwd=2
+
+    RES_KE = (KET['dEdt'] +
+              KET['pUpls'] + KET['pUmns'] + KET['pWmns'] +
+              KET['GSP'] + KET['LSP'] + KET['K2P'] +
+              KET['LDz'] + KET['HDz'] + KET['LDh'] + KET['HDh'])
+
+    RES_PE = (PET['dEdt'] +
+              PET['pUpls'] + PET['pUmns'] + PET['pWmns'] +
+              PET['LC'] + PET['AdPE'] + PET['P2K'] +
+              PET['LDz'] + PET['HDz'] + PET['LDh'] + PET['HDh'])
+
+    list_keys = list(MET.keys())
+    list_keys.remove('t')
+    RES_ME = 0.*MET['t'][:]
+    for ll in range(len(list_keys)):
+        RES_ME += MET[list_keys[ll]]
+    axmM = min([MET[list_keys[ll]].min() for ll in range(len(list_keys))])
+    axMM = max([MET[list_keys[ll]].max() for ll in range(len(list_keys))])
+
+    list_keys = list(KET.keys())
+    list_keys.remove('t')
+    axmK = min([KET[list_keys[ll]].min() for ll in range(len(list_keys))])
+    axMK = max([KET[list_keys[ll]].max() for ll in range(len(list_keys))])
+
+    list_keys = list(PET.keys())
+    list_keys.remove('t')
+    axmP = min([PET[list_keys[ll]].min() for ll in range(len(list_keys))])
+    axMP = max([PET[list_keys[ll]].max() for ll in range(len(list_keys))])
+
+    axm = min(axmM, axmK, axmP)
+    axM = max(axMM, axMK, axMP)
+
+    t_scl = 0.5 * MET['t'][t_strt:] * s.f / np.pi
+    tm, tM = t_scl[0], t_scl[-1]
+
+    plt.close('all')
+
+    # %% ----------------------------------------------------------------------
+
+    # fig = plt.figure(nm)
+    # plt = fig.gca()
+    plt.figure(1)
+    plt.plot(t_scl, MET['dEdt'][t_strt:], 'k',
+             label='$\partial E/\partial t$')
+    plt.plot(t_scl, MET['GSP'][t_strt:], 'b',
+             label='Geostrophic SP')
+    plt.plot(t_scl, MET['LSP'][t_strt:], 'b--',
+             label='Lateral SP')
+    plt.plot(t_scl, MET['LC'][t_strt:], color='orange',
+             label="$M^2ub'/N^2$")
+    plt.plot(t_scl, MET['AdPE'][t_strt:], color='brown',
+             label="PE advection")
+    plt.plot(t_scl, MET['pUpls'][t_strt:], 'm:',
+             label="$[P + b'^2/(2N^2)]u|_{right}$")
+    plt.plot(t_scl, MET['pUmns'][t_strt:], 'm',
+             label="$-[P + b^2/(2N^2)]u|_{le\!f\!t}$")
+    plt.plot(t_scl, MET['pWmns'][t_strt:], 'm+',
+             label="$-[P + b^2/(2N^2)]w|_{bottom}$")
+    plt.plot(t_scl, MET['LDz'][t_strt:], 'g',
+             label=r"$-(\nu \partial_z^2 \vec v')\cdot \vec v'$")
+    # plt.plot(t_scl, MET['HDz'][t_strt:], 'g+',
+    #          label=r"$-(-\nu_4 \partial_z^4 \vec v')\cdot \vec v'$")
+    plt.plot(t_scl, MET['LDh'][t_strt:], 'g--',
+             label=r"$-(\nu \partial_x^2 \vec v')\cdot \vec v'$")
+    plt.plot(t_scl, MET['HDh'][t_strt:], 'g+',
+             label=r"$-(-\nu_4 \partial_x^4 \vec v')\cdot \vec v'$")
+    plt.plot(t_scl, RES_ME[t_strt:], 'r+', label="Residual")
+
+    plt.grid('on')
+    plt.axis([tm, tM, axm, axM])
+    plt.xlabel("$tf/2\pi$")
+    plt.ylabel("Power Per Unit Density [$m^4/s^3$]")
+    plt.title("Mechanical Energy Budget")
+    plt.legend(loc='upper right')
+    # plt.tight_layout()
+    plt.show()
+
+    mng = plt.get_current_fig_manager()
+    mng.window.showMaximized()
+    get_current_fig_manager().window.raise_()
+    # mng.frame.Maximize(True)
+
+    if printON:
+        plt.savefig(base + nm + '-MEB.png', format="png")
+        plt.savefig(base + nm + '-MEB.pdf', format="pdf")
+
+    # %% ----------------------------------------------------------------------
+
+    # fig = plt.figure(nm)
+    # plt = fig.gca()
+    plt.figure(2)
+    plt.plot(t_scl, KET['dEdt'][t_strt:], 'k',
+             label='$\partial KE/\partial t$')
+    plt.plot(t_scl, KET['GSP'][t_strt:], 'b',
+             label='Geostrophic SP')
+    plt.plot(t_scl, KET['LSP'][t_strt:], 'b--',
+             label='Lateral SP')
+    plt.plot(t_scl, KET['K2P'][t_strt:], color='0.5',
+             label='$-bw$')
+    plt.plot(t_scl, KET['pUpls'][t_strt:], 'm:',
+             label="$Pu|_{right}$")
+    plt.plot(t_scl, KET['pUmns'][t_strt:], 'm',
+             label="$-Pu|_{le\!f\!t}$")
+    plt.plot(t_scl, KET['pWmns'][t_strt:], 'm+',
+             label="$-Pw|_{bottom}$")
+    plt.plot(t_scl, KET['LDz'][t_strt:], 'g',
+             label=r"$-(\nu \partial_z^2 \vec v')\cdot \vec v'$")
+    # plt.plot(t_scl, KET['HDz'][t_strt:], 'g+',
+    #          label=r"$-(-\nu_4 \partial_z^4 \vec v')\cdot \vec v'$")
+    plt.plot(t_scl, KET['LDh'][t_strt:], 'g--',
+             label=r"$-(\nu \partial_x^2 \vec v')\cdot \vec v'$")
+    plt.plot(t_scl, KET['HDh'][t_strt:], 'g+',
+             label=r"$-(-\nu_4 \partial_x^4 \vec v')\cdot \vec v'$")
+    plt.plot(t_scl, RES_KE[t_strt:], 'r--', label="Residual")
+
+    plt.grid('on')
+    plt.axis([tm, tM, axm, axM])
+    plt.xlabel("$tf/2\pi$")
+    plt.ylabel("Power Per Unit Density [$m^4/s^3$]")
+    plt.title("Kinetic Energy Budget")
+    plt.legend(loc='upper right')
+    # plt.tight_layout()
+    plt.show()
+
+    mng = plt.get_current_fig_manager()
+    mng.window.showMaximized()
+    get_current_fig_manager().window.raise_()
+    # mng.frame.Maximize(True)
+
+    if printON:
+        plt.savefig(base + nm + '-KEB.png', format="png")
+        plt.savefig(base + nm + '-KEB.pdf', format="pdf")
+    # %% ----------------------------------------------------------------------
+
+    # fig = plt.figure(nm)
+    # plt = fig.gca()
+    plt.figure(3)
+    plt.plot(t_scl, PET['dEdt'][t_strt:], 'k',
+             label='$\partial PE/\partial t$')
+    plt.plot(t_scl, PET['AdPE'][t_strt:], color='brown',
+             label='PE advection')
+    plt.plot(t_scl, PET['LC'][t_strt:], color='orange',
+             label='Lateral Conv.')
+    plt.plot(t_scl, PET['P2K'][t_strt:], color='0.5',
+             label='$bw$')
+    plt.plot(t_scl, PET['pUpls'][t_strt:], 'm:',
+             label="$b^2u/(2N^2)|_{right}$")
+    plt.plot(t_scl, PET['pUmns'][t_strt:], 'm',
+             label="$-b^2u/(2N^2)|_{le\!f\!t}$")
+    plt.plot(t_scl, PET['pWmns'][t_strt:], 'm+',
+             label="$-b^2w/(2N^2)|_{bottom}$")
+    plt.plot(t_scl, PET['LDz'][t_strt:], 'g',
+             label=r"$-(\nu \partial_z^2 b')b'/N^2$")
+    # plt.plot(t_scl, PET['HDz'][t_strt:], 'g+',
+    #          label=r"$-(-\nu_4 \partial_z^4 b')b'/N^2$")
+    plt.plot(t_scl, PET['LDh'][t_strt:], 'g--',
+             label=r"$-(\nu \partial_x^2 b')b'/N^2$")
+    plt.plot(t_scl, PET['HDh'][t_strt:], 'g+',
+             label=r"$-(-\nu_4 \partial_x^4 b')b'/N^2$")
+    plt.plot(t_scl, RES_PE[t_strt:], 'r--', label="Residual")
+
+    plt.grid('on')
+    plt.axis([t_scl[0], t_scl[-1], axm, axM])
+    plt.xlabel("$tf/2\pi$")
+    plt.ylabel("Power Per Unit Density [$m^4/s^3$]")
+    plt.title("Available Potential Energy Budget")
+    plt.legend(loc='upper right')
+    # plt.tight_layout()
+    plt.show()
+
+    mng = plt.get_current_fig_manager()
+    mng.window.showMaximized()
+    get_current_fig_manager().window.raise_()
+    # mng.frame.Maximize(True)
+
+    if printON:
+        plt.savefig(base + nm + '-PEB.png', format="png")
+        plt.savefig(base + nm + '-PEB.pdf', format="pdf")
+
+
+# %% --------------------------------------------------------------------------
+
+tic_strt = time.time()
+
+if getpass.getuser() == 'NicoG':
+    base = '/Volumes/LaCie2TB/mbf/'
+    # base = '/Users/NicoG/FS_Morgan/outputs/'
+elif getpass.getuser() == 'nicolas':
+    base = '/data/nicolas/mbf/'
+elif getpass.getuser() == 'mbfox':
+    base = '/data/mbfox/'
+else:
+    raise NameError(
+        'This is a new user or computer: what is the base directory?')
+
+saveON = 1  # 1 to compute and save, 0 to just load
+plotON = 1  # 1 to plt spaghetti, 0 to not
+printON = 1
+
+plt.close('all')
+
+XcldLst = ['12R09']  # , '09R09', '09R10', '11R09', '12R10']
+
+for ii in ['04']:
+    for iN in ['50']:
+        for iF in ['12']:  # ['09', '10', '11', '12']:
+            for iR in ['14']:  # ['09', '10', '12', '14']:
+
+                setup = 'N' + iN + 'F' + iF + 'R' + iR + '-' + ii + '-HF'
+
+                if XcldLst.count(setup[4:9]) == 1:
+                    continue
+
+                root_dir = base + setup
+                print(root_dir)
+
+                # %% ----------------------------------------------------------
+                pkl_file = open(root_dir+'/spec_params.pkl', 'rb')
+                d2pkl = pickle.load(pkl_file)
+                pkl_file.close()
+
+                s = dictionary_to_class(**d2pkl)
+                del d2pkl
+
+                # %% ----------------------------------------------------------
+                ilft = int((s.Lx - 2.0*s.chi0)/s.dx)  # index of left boundary
+                irgt = int((s.Lx - 0.1*s.chi0)/s.dx)  # index of right boundary
+                kbot = 2*s.nnz//3  # index of bottom boundary
+
+                iRiG = s.S2Loc**2/(s.f**2*s.N2Loc)
+                sigma0 = s.f*np.sqrt((iRiG - s.RoGLoc - 1.).max())
+                tstr = 0  # index of first iteration
+
+                boundaries_list = [irgt, ilft, kbot, tstr]
+
+                # %% ----------------------------------------------------------
+                if saveON:
+                    KET, PET = MEBTerms(s, root_dir, boundaries_list)
+
+                if plotON:
+                    if not saveON:
+                        KET = np.load(root_dir+'/KEBterms.npz')
+                        PET = np.load(root_dir+'/PEBterms.npz')
+
+                    MET = {}
+                    for kk in ['dEdt', 'pUpls', 'pUmns', 'pWmns', 'LDz', 'HDz',
+                               'LDh', 'HDh']:
+                        MET[kk] = KET[kk] + PET[kk]
+                    for kk in ['t', 'GSP', 'LSP']:
+                        MET[kk] = KET[kk]
+                    for kk in ['AdPE', 'LC']:
+                        MET[kk] = PET[kk]
+
+                    plot_one_budget(KET, PET, MET, s, printON, base, setup, 0)

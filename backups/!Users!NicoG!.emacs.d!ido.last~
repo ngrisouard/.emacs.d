@@ -2,27 +2,36 @@
 
 ;; ----- ido-last-directory-list -----
 (
+ ("/Users/NicoG/" . ".emacs.d/")
+ ("/Users/" . "NicoG/")
  ("/Users/NicoG/Dropbox/python_useful/" . "M1/")
  ("/Users/NicoG/Dropbox/" . "python_useful/")
 )
 
 ;; ----- ido-work-directory-list -----
 (
- "/Users/NicoG/"
  "/Users/NicoG/Dropbox/python_useful/M1/"
+ "/Users/NicoG/.emacs.d/"
+ "/Users/NicoG/"
 )
 
 ;; ----- ido-work-file-list -----
 (
- ".bashrc"
  "EBudget.py"
+ "ComputeMu0.py"
+ "init.el"
+ ".bashrc"
 )
 
 ;; ----- ido-dir-file-cache -----
 (
- ("/Users/NicoG/.emacs.d/" (22640 7232 0 0) "themes/" "snippets/" "prelude" "init.el~" "init.el" "ido.last" "elpa/" "backups/" "auto-save-list/" ".git/" "../" "./")
+ ("/Users/NicoG/Dropbox/python_useful/M1/" (22641 2594 0 0) "visu2D.py" "read_problem_params.py" "prod2D.py" "mbf.py" "M1ParamsTriage.py" "M1ParamsTriage-161019.py" "KEBudget_ultra_fast.py" "KEBudget_fast.py" "KEBudget_161011.py" "KEBudget.py" "EoMBudget.py" "EnergyBudget_MBF.py" "EnergyBudget.py" "EBudget.py~" "EBudget.py" "ComputeParams2D.py" "ComputeMu0.py" "__pycache__/" ".DS_Store" "../" "./")
 
- ("/Users/NicoG/Dropbox/python_useful/M1/" (22602 652 0 0) "visu2D.py" "read_problem_params.py" "prod2D.py" "mbf.py" "M1ParamsTriage.py" "M1ParamsTriage-161019.py" "KEBudget_ultra_fast.py" "KEBudget_fast.py" "KEBudget_161011.py" "KEBudget.py" "EoMBudget.py" "EnergyBudget_MBF.py" "EnergyBudget.py" "EBudget.py~" "EBudget.py" "ComputeParams2D.py" "ComputeMu0.py" "__pycache__/" ".DS_Store" "../" "./")
+ ("/Users/NicoG/.emacs.d/" (22641 2616 0 0) "themes/" "snippets/" "request/" "prelude" "init.el~" "init.el" "ido.last" "elpa/" "backups/" "auto-save-list/" ".git/" "../" "./")
+
+ ("/Users/NicoG/" (22641 2521 0 0) "Travel/" "transfer-NGW2015" "tongariro" "Teaching/" "svnroot/" "svn/" "Sites/" "Setup.eps" "scinet-Y" "scinet" "recherche/" "Public/" "port_FS.bash" "Pictures/" "OneDrive/" "old_scripts/" "OfferLetterRTA.dotx" "nicogws2015" "NekOutputs/" "NekExamples/" "Nek5000/" "Music/" "Movies/" "Morgan0524.zip" "ModesMWE/" "MITgcm/" "maxout.gnuplot_pipes" "maxout.gnuplot" "LPNQGPV/" "Library/" "install.sh" "input" "HQPs/" "Google Drive/" "FS_Sherry/" "FS_Morgan/" "FS_Maheyer_WS/" "FS_Maheyer.zip" "FS_Maheyer/" "FS_in-house/" "FS_Arctic/" "FS-IS/" "FlowSolveScattering.zip" "FlowSolveScattering/" "emacs.d.tar" "Dropbox/" "Downloads/" "Documents/" "Desktop/" "dedalus/" "currents/" "Committees/" "brew_FS.bash" "Box Sync/" "Books/" "BECcode/" "Articles/" "Applications/" "anaconda/" ".Xauthority" ".x2goclient/" ".x2go/" ".wget-hsts" ".vnc/" ".viminfo" ".Trash/" ".TemporaryItems/" ".subversion/" ".ssh/" ".spyder2-py3/" ".spyder-py3/" ".Spyder/" ".serverauth.9480" ".serverauth.894" ".serverauth.8902" ".serverauth.62370" ".serverauth.4782" ".serverauth.4707" ".serverauth.44609" ".serverauth.4143" ".serverauth.3894" ".serverauth.27097" ".serverauth.15370" ".serverauth.1510" ".rnd" ".QtWebEngineProcess/" ".qt/" ".python_history" ".pylint.d/" ".putty/" ".profile.pysave" ".profile.macports-saved_2016-08-08_at_09:45:14" ".profile.macports-saved_2016-04-26_at_20:22:16" ".profile.macports-saved_2016-04-25_at_18:39:41" ".profile.macports-saved_2015-06-22_at_12:12:33" ".profile.macports-saved_2015-04-03_at_16:44:14" ".profile.macports-saved_2014-01-31_at_13:28:06" ".profile.macports-saved_2014-01-31_at_12:50:40" ".profile.macports-saved_2014-01-31_at_12:26:15" ".profile-anaconda.bak" ".profile" ".parallel/" ".oracle_jre_usage/" ".odv4_macx64" ".nx/" ".NicoG_Velocity_ini.txt" ".NicoG_HD_Quality.txt" ".nedit/" ".ncviewrc" ".maxima/" ".matplotlib/" ".matlab/" ".latexmkrc" ".jupyter/" ".ispell_american" ".ipython/" ".inkscape-etc/" ".idlerc/" ".hgrc" ".gnuplot_history" ".gnupg/" ".gnome2/" ".globusonline/" ".gitconfig" ".gimp-2.8/" ".fontconfig/" ".filezilla/" ".enstaller4rc" ".emacs.d/" ".dvdcss/" ".DS_Store" ".dropbox/" ".cvspass" ".cups/" ".continuum/" ".config/" ".CFUserTextEncoding" ".canopy/" ".cache/" ".boxsync/" ".bashrc" ".bash_sessions/" ".bash_profile~" ".bash_profile.macports-saved_2016-09-27_at_08:58:40" ".bash_profile.macports-saved_2016-09-26_at_13:05:23" ".bash_profile.macports-saved_2016-09-25_at_17:22:59" ".bash_profile" ".bash_history" ".APKey.plist" ".anyconnect" ".android/" ".anaconda/" "../" "./")
+
+ ("/Users/NicoG/.emacs.d/themes/" (22640 5124 0 0) "zenburn-theme.el" "zenburn-emacs/" "monokai-theme.el" "monokai-emacs/" "../" "./")
 
  ("/Users/NicoG/Dropbox/python_useful/" (22575 31515 0 0) "smop-0.25/" "s1.py" "obngfft/" "modes_v3.ipynb" "modes.py" "M1/" "libermate-master/" "juricap-ompc-96c520b01abc/" "IdScat/" "FD.pyc" "FD.py" "factors.pyc" "factors.py" "exp_scale.py" "create_mov_ffmpeg.bash~" "create_mov_ffmpeg.bash" "BRK/" "ArcticAsymm/" "__pycache__/" ".ipynb_checkpoints/" ".DS_Store" "../" "./")
 
@@ -30,8 +39,6 @@
 " "GFD template/" "FS_Morgan_WS/" "FS_Morgan_Mac/" "FS_Arctic.tar.gz" "Forcing.wxm" "FlowSolveFCS/" "flow_solve_LT.tar" "flow_solve_2013/" "EquOfMotion.m" "EigenVecsBoussinesq.wxm" "eigenvecs_front_strain.wxm" "dyer_ellen_sgs_thesis/" "Disk Utility pour Mac: Réparer un disque à l’aide d’Utilitaire de disque.pdf" "Demandes de fichiers/" "D_Miranda_shella/" "D_Miranda_ring/" "D_Miranda_me/" "CoolerBox_01-f90.zip" "Chargements Appareil Photo/" "Bans_Formulaires.odt" "AttestationNonCouverture.odt" "Atmostphere:Ocean Physics Recruitment 2016/" "Articles.txt" "ArcticMix/" "Apps/" "AirMiles.pdf" "ACC.avi" "2017-SpontaneousRadiation/" "2015_FG/" ".DS_Store" ".dropbox.cache/" ".dropbox" ".com.apple.timemachine.supported" "../" "./")
 
  ("/Users/" (22504 33221 0 0) "Shared/" "NicoG/" "Guest/" ".localized" "../" "./")
-
- ("/Users/NicoG/" (22640 3873 0 0) "Travel/" "transfer-NGW2015" "tongariro" "Teaching/" "svnroot/" "svn/" "Sites/" "Setup.eps" "scinet-Y" "scinet" "recherche/" "Public/" "port_FS.bash" "Pictures/" "OneDrive/" "old_scripts/" "OfferLetterRTA.dotx" "nicogws2015" "NekOutputs/" "NekExamples/" "Nek5000/" "Music/" "Movies/" "Morgan0524.zip" "ModesMWE/" "MITgcm/" "maxout.gnuplot_pipes" "maxout.gnuplot" "LPNQGPV/" "Library/" "install.sh" "input" "HQPs/" "Google Drive/" "FS_Sherry/" "FS_Morgan/" "FS_Maheyer_WS/" "FS_Maheyer.zip" "FS_Maheyer/" "FS_in-house/" "FS_Arctic/" "FS-IS/" "FlowSolveScattering.zip" "FlowSolveScattering/" "Dropbox/" "Downloads/" "Documents/" "Desktop/" "dedalus/" "currents/" "Committees/" "brew_FS.bash" "Box Sync/" "Books/" "BECcode/" "Articles/" "Applications/" "anaconda/" ".Xauthority" ".x2goclient/" ".x2go/" ".wget-hsts" ".vnc/" ".viminfo" ".Trash/" ".TemporaryItems/" ".subversion/" ".ssh/" ".spyder2-py3/" ".spyder-py3/" ".Spyder/" ".serverauth.9480" ".serverauth.894" ".serverauth.8902" ".serverauth.62370" ".serverauth.4782" ".serverauth.4707" ".serverauth.44609" ".serverauth.4143" ".serverauth.3894" ".serverauth.27097" ".serverauth.15370" ".serverauth.1510" ".rnd" ".QtWebEngineProcess/" ".qt/" ".python_history" ".putty/" ".profile.pysave" ".profile.macports-saved_2016-08-08_at_09:45:14" ".profile.macports-saved_2016-04-26_at_20:22:16" ".profile.macports-saved_2016-04-25_at_18:39:41" ".profile.macports-saved_2015-06-22_at_12:12:33" ".profile.macports-saved_2015-04-03_at_16:44:14" ".profile.macports-saved_2014-01-31_at_13:28:06" ".profile.macports-saved_2014-01-31_at_12:50:40" ".profile.macports-saved_2014-01-31_at_12:26:15" ".profile-anaconda.bak" ".profile" ".parallel/" ".oracle_jre_usage/" ".odv4_macx64" ".nx/" ".NicoG_Velocity_ini.txt" ".NicoG_HD_Quality.txt" ".nedit/" ".ncviewrc" ".maxima/" ".matplotlib/" ".matlab/" ".latexmkrc" ".jupyter/" ".ispell_american" ".ipython/" ".inkscape-etc/" ".idlerc/" ".hgrc" ".gnuplot_history" ".gnupg/" ".gnome2/" ".globusonline/" ".gitconfig" ".gimp-2.8/" ".fontconfig/" ".filezilla/" ".enstaller4rc" ".emacs.d/" ".dvdcss/" ".DS_Store" ".dropbox/" ".cvspass" ".cups/" ".continuum/" ".config/" ".CFUserTextEncoding" ".canopy/" ".cache/" ".boxsync/" ".bashrc" ".bash_sessions/" ".bash_profile~" ".bash_profile.macports-saved_2016-09-27_at_08:58:40" ".bash_profile.macports-saved_2016-09-26_at_13:05:23" ".bash_profile.macports-saved_2016-09-25_at_17:22:59" ".bash_profile" ".bash_history" ".APKey.plist" ".anyconnect" ".android/" ".anaconda/" "../" "./")
 )
 
 ;; ----- ido-unc-hosts-cache -----
