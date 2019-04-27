@@ -4,9 +4,14 @@
 ;; --------------------------------------
 
 (require 'package)
+
 (add-to-list
  'package-archives
  '("melpa" . "http://melpa.org/packages/") t)
+
+(package-initialize)
+(when (not package-archive-contents)
+  (package-refresh-contents))
 
 ;; (add-to-list
 ;;  'package-archives
@@ -22,34 +27,71 @@
 
 (defvar myPackages
   '(better-defaults
+    ein  ;; emacs ipython notebookxf
     elpy  ;; better python mode
-    flycheck ;; better python syntax checking
-    py-autopep8 ;; python script fixing
+    flycheck  ;; better python syntax checking
+    py-autopep8  ;; python script fixing
     )
   )
 ;;    material-theme))
 
-(elpy-enable)
+(mapc #'(lambda (package)
+    (unless (package-installed-p package)
+      (package-install package)))
+      myPackages)
+
+
+;; Basic CONFIGURATION
+;; --------------------------------------
+
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+(add-to-list 'custom-theme-load-path "~/.emacs.d/themes/")
+(add-to-list 'custom-theme-load-path "~/.emacs.d/themes/replace-colorthemes/")
+ 
+;; (load-theme 'monokai t)
+;; (load-theme 'material t)
+;; (global-linum-mode t) ;; enable line numbers globally
+(scroll-bar-mode -1) ;; thinner vertical divider for split
+
 
 ;; CUSTOMIZATION
-
 ;; --------------------------------------
-;; python suff
-
-(require 'py-autopep8)
-(add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save)
-
-(elpy-use-ipython)
+;; python stuff
 
 (when (memq window-system '(mac ns))  ;; otherwise I get the wrong python distro on a Mac
   (exec-path-from-shell-initialize))
+
+(elpy-enable)
+(elpy-use-ipython)
+
+;; (defun ipython ()
+;;    (interactive)
+;;    (term "/Users/NicoG/anaconda/bin/ipython"))
+
+;; (require 'python)
+;; (setq python-shell-interpreter "ipython")
+;; (setq python-shell-interpreter-args "--pylab")
+
+;; (require 'ein)
+
+(require 'fill-column-indicator)
+(setq fci-rule-column 79)
+(add-hook 'c-mode-hook 'fci-mode)
+
+(require 'py-autopep8)
+(add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save)
 
 (when (require 'flycheck nil t)
   (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
   (add-hook 'elpy-mode-hook 'flycheck-mode))
 
 ;; --------------------------------------
-;; themes and TeX stuff
+;; TeX stuff
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -59,25 +101,56 @@
  '(TeX-source-correlate-method (quote synctex))
  '(TeX-source-correlate-mode t)
  '(TeX-source-correlate-start-server t)
+ '(ansi-color-faces-vector
+   [default default default italic underline success warning error])
  '(ansi-color-names-vector
    ["#3F3F3F" "#CC9393" "#7F9F7F" "#F0DFAF" "#8CD0D3" "#DC8CC3" "#93E0E3" "#DCDCCC"])
+ '(compilation-message-face (quote default))
+ '(custom-enabled-themes nil)
  '(custom-safe-themes
    (quote
-    ("67a0265e2497207f5f9116c4d2bfbbab4423055e3ab1fa46ea6bd56f7e322f6a" "fe230d2861a13bb969b5cdf45df1396385250cc0b7933b8ab9a2f9339b455f5c" default)))
+    ("db510eb70cf96e3dbd48f5d24de12b03db30674ea0853f06074d4ccf7403d7d3" "b8c5adfc0230bd8e8d73450c2cd4044ad7ba1d24458e37b6dec65607fc392980" "cc2f32f5ee19cbd7c139fc821ec653804fcab5fcbf140723752156dc23cdb89f" "8db4b03b9ae654d4a57804286eb3e332725c84d7cdab38463cb6b97d5762ad26" "8062d7fd259d3232d69b38db3b15d4ac44a70bf620cbc5b3926a6e16c74d6a5a" "aaf783d4bfae32af3e87102c456fba8a85b79f6e586f9911795ea79055dee3bf" "4bcdfc98cf64ce6145684dc8288fd87489cfa839e07f95f6c791d407624d04f8" "704a108ab29ea8fc8feb718a538e9ce45d732dce41e5b04585f43a6352c5519e" "a02c000c95c43a57fe1ed57b172b314465bd11085faf6152d151385065e0e4b1" "1127f29b2e4e4324fe170038cbd5d0d713124588a93941b38e6295a58a48b24f" "a5a2954608aac5c4dcf9659c07132eaf0da25a8f298498a7eacf97e2adb71765" "8e7044bfad5a2e70dfc4671337a4f772ee1b41c5677b8318f17f046faa42b16b" "780c67d3b58b524aa485a146ad9e837051918b722fd32fd1b7e50ec36d413e70" "a11043406c7c4233bfd66498e83600f4109c83420714a2bd0cd131f81cbbacea" "392f19e7788de27faf128a6f56325123c47205f477da227baf6a6a918f73b5dc" "7bd626fcc9fbfb44186cf3f08b8055d5a15e748d5338e47f9391d459586e20db" "be5b03913a1aaa3709d731e1fcfd4f162db6ca512df9196c8d4693538fa50b86" "0e8c264f24f11501d3f0cabcd05e5f9811213f07149e4904ed751ffdcdc44739" "98cc377af705c0f2133bb6d340bf0becd08944a588804ee655809da5d8140de6" "5dc0ae2d193460de979a463b907b4b2c6d2c9c4657b2e9e66b8898d2592e3de5" "67a0265e2497207f5f9116c4d2bfbbab4423055e3ab1fa46ea6bd56f7e322f6a" "fe230d2861a13bb969b5cdf45df1396385250cc0b7933b8ab9a2f9339b455f5c" default)))
  '(fci-rule-color "#383838")
+ '(highlight-changes-colors (quote ("#FD5FF0" "#AE81FF")))
+ '(highlight-symbol-colors
+   (quote
+    ("#EFFF00" "#73CD4F" "#83DDFF" "MediumPurple1" "#66CDAA" "DarkOrange" "HotPink1" "#809FFF" "#ADFF2F")))
+ '(highlight-tail-colors
+   (quote
+    (("#20240E" . 0)
+     ("#679A01" . 20)
+     ("#4BBEAE" . 30)
+     ("#1DB4D0" . 50)
+     ("#9A8F21" . 60)
+     ("#A75B00" . 70)
+     ("#F309DF" . 85)
+     ("#20240E" . 100))))
+ '(hl-paren-background-colors
+   (quote
+    ("#00FF99" "#CCFF99" "#FFCC99" "#FF9999" "#FF99CC" "#CC99FF" "#9999FF" "#99CCFF" "#99FFCC" "#7FFF00")))
+ '(hl-paren-colors (quote ("#326B6B")))
+ '(hl-sexp-background-color "#1c1f26")
  '(inhibit-startup-echo-area-message "NicoG")
  '(inhibit-startup-screen t)
  '(initial-buffer-choice "~/.emacs.d/init.el")
+ '(magit-diff-use-overlays nil)
  '(nrepl-message-colors
    (quote
     ("#CC9393" "#DFAF8F" "#F0DFAF" "#7F9F7F" "#BFEBBF" "#93E0E3" "#94BFF3" "#DC8CC3")))
  '(package-selected-packages
    (quote
-    (py-autopep8 flycheck exec-path-from-shell anaconda-mode auctex)))
+    (underwater-theme organic-green-theme jazz-theme color-theme-solarized color-theme fill-column-indicator py-yapf matlab-mode 0blayout ein py-autopep8 flyc
+                      (\` heck)
+                      exec-path-from-shell anaconda-mode auctex)))
  '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838")))
+ '(pos-tip-background-color "#A6E22E")
+ '(pos-tip-foreground-color "#272822")
+ '(py-pychecker-command "pychecker.sh")
+ '(py-pychecker-command-args (quote ("")))
+ '(python-check-command "pychecker.sh")
  '(vc-annotate-background "#2B2B2B")
  '(vc-annotate-color-map
-   (quote
+   (quoteloa
     ((20 . "#BC8383")
      (40 . "#CC9393")
      (60 . "#DFAF8F")
@@ -96,30 +169,30 @@
      (320 . "#8CD0D3")
      (340 . "#94BFF3")
      (360 . "#DC8CC3"))))
- '(vc-annotate-very-old-color "#DC8CC3"))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :stipple nil :background "#272822" :foreground "#F8F8F2" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 110 :width normal :foundry "nil" :family "Menlo")))))
-(add-to-list 'custom-theme-load-path "~/.emacs.d/themes/")
-;; (load-theme 'monokai t)
-;; (load-theme 'material t)
-(global-linum-mode t) ;; enable line numbers globally
-(scroll-bar-mode -1) ;; thinner vertical divider for split
+ '(vc-annotate-very-old-color "#DC8CC3")
+ '(weechat-color-list
+   (unspecified "#272822" "#20240E" "#F70057" "#F92672" "#86C30D" "#A6E22E" "#BEB244" "#E6DB74" "#40CAE4" "#66D9EF" "#FB35EA" "#FD5FF0" "#74DBCD" "#A1EFE4" "#F8F8F2" "#F8F8F0")))
 
-;; Nouse scrolling
+;; Mouse scrolling
 (setq mouse-wheel-scroll-amount '(2 ((shift) . 1) ((control) . nil)))
 (setq mouse-wheel-progressive-speed nil)
-(setq ispell-program-name "/usr/local/bin/ispell")
-(setenv "DICTIONARY" "en_CA")
+(setq ispell-program-name "aspell")
+; (setq ispell-program-name "/usr/local/bin/ispell")
+(setenv "DICTIONARY" "en_CA") ;; I don't know why this one doesn't work
+(setq ispell-dictionary "en_CA")  ;; but this one does
+
+; (setcar ispell-tex-skip-alists
+;         (append
+;          (car ispell-tex-skip-alists)
+;          '(("[^\\]\\$" . "[^\\]\\$"))))
 
 ;; AucTeX
 ;; Taken from http://www.stefanom.org/setting-up-a-nice-auctex-environment-on-mac-os-x/
 (setq TeX-auto-save t)
+(setq TeX-save-query nil) ;; autosave before compiling, from http://emacsworld.blogspot.ca/2011/05/auctex-tip-automatically-save-file.html
 (setq TeX-parse-self t)
 (add-hook 'LaTeX-mode-hook 'visual-line-mode)
+; (add-hook 'LaTeX-mode-hook 'flyspell-mode)
 (add-hook 'LaTeX-mode-hook 'flyspell-mode)
 (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
 (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
@@ -133,7 +206,7 @@
 ;; Note: SyncTeX is setup via ~/.latexmkrc (see below)
 (add-hook 'LaTeX-mode-hook (lambda ()
   (push
-    '("latexmk" "latexmk -pdf %s" TeX-run-TeX nil t
+    '("latexmk" "latexmk -pvc -pdf %s" TeX-run-TeX nil t
       :help "Run latexmk on file")
     TeX-command-list)))
 (add-hook 'TeX-mode-hook '(lambda () (setq TeX-command-default "latexmk")))

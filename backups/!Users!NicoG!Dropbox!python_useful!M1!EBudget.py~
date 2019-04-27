@@ -3,20 +3,22 @@
 Created on Thu Dec 15:00:00 2016
 
 @author: NicoG
+
 """
 
 import sys
-import os
-import matplotlib.pyplot as plt
-import numpy as np
 # from numpy import shape
-import netCDF4 as nc
 import time
 import getpass
 import pickle
-from matplotlib import rc
-from pylab import get_current_fig_manager
-if (sys.version_info > (3, 0)):  # Then Python 3 is running
+import os
+import netCDF4 as nc
+import numpy as np
+import matplotlib as mpl
+mpl.use('TkAgg')
+import matplotlib.pyplot as plt
+# from pylab import get_current_fig_manager
+if sys.version_info > (3, 0):  # Then Python 3 is running
     sys.path.append('/Users/NicoG/Dropbox/python_useful/obngfft')
     import ngobfftPy3 as tf
 else:  # Then is has to be Python 2
@@ -25,13 +27,15 @@ else:  # Then is has to be Python 2
 # %% NG start -----------------------------------------------------------------
 
 
-class dictionary_to_class:
+class DictionaryToClass:
+    """Changes a dictionary in to a class"""
     def __init__(self, **entries):
         self.__dict__.update(entries)
 # %% --------------------------------------------------------------------------
 
 
 def int_vol(dx, dz, u):
+    """ Volume integral """
     uint1 = np.trapz(u, dx=dz, axis=1)
     uint2 = np.trapz(uint1, dx=dx, axis=1)
     return uint2
@@ -66,8 +70,8 @@ def DerivFour(x, uVar, K, n):
 
 
 def print_elpsd(str_step, tic):
-    print('{0} completed, elapsed time = {1: 4d} s'.format(str_step,
-          int(time.time() - tic)))
+    print('{0} completed, elapsed time = {1: 4d} s'.format(
+        str_step, int(time.time() - tic)))
     return time.time()
 # %% --------------------------------------------------------------------------
 
@@ -80,7 +84,7 @@ def print_int_elpsd(str_step, counter, ncounters, tic):
 # %% --------------------------------------------------------------------------
 
 
-def MEBTerms(s, setup, plst):  # Mechanichal Energy Budget Terms
+    def MEBTerms(setup, plst):  # Mechanichal Energy Budget Terms
 
     Var = {}  # this dictionary will be the recipient of the loaded variables
 
@@ -196,7 +200,7 @@ def MEBTerms(s, setup, plst):  # Mechanichal Energy Budget Terms
 
         for vv in ['u', 'v', 'w', 's1']:
             Var[vv] = (fID_XZ[prs].variables[vv+'Var'][plst[3]:, kbott:,
-                       :].copy())
+                                                       :].copy())
             # tic = print_elpsd('loading ' + vv + ', proc #' + prs, tic)
 
         bVar = -s.g / s.rho_0 * (Var['s1'][:, :, :] - s.RLoc[kb:kt, :])
@@ -211,30 +215,31 @@ def MEBTerms(s, setup, plst):  # Mechanichal Energy Budget Terms
         # Flux calculations
 
         if pr == npb:  # works no matter how many procs there are
-            pVar_zmns = (fID_d[prs].variables['pVar'][plst[3]:, kbott,
-                         plst[1]:plst[0]+1].copy())
+            pVar_zmns = (
+                    fID_d[prs].variables['pVar'][plst[3]:, kbott,
+                    plst[1]:plst[0]+1].copy())
             phiKE_zmns = -pVar_zmns * Var['w'][:, 0, plst[1]:plst[0]+1]
-            phiPE_zmns = -(0.5 * bVar[:, 0, plst[1]:plst[0]+1] *
-                           bN2[:, 0, plst[1]:plst[0]+1]
-                           ) * Var['w'][:, 0, plst[1]:plst[0]+1]
+            phiPE_zmns = -(
+                    0.5 * bVar[:, 0, plst[1]:plst[0]+1] *
+                    bN2[:, 0, plst[1]:plst[0]+1]
+                    ) * Var['w'][:, 0, plst[1]:plst[0]+1]
             # the - sign above is because of orientation of outward normal
 
         # right boundary
         pVar_xpls = (fID_d[prs].variables['pVar'][plst[3]:, kbott:,
-                     plst[0]].copy())
+                plst[0]].copy())
         phiKE_xpls[:, kbi:kti] = pVar_xpls * Var['u'][:, :, plst[0]]
         phiPE_xpls[:, kbi:kti] = (0.5 * bVar[:, :, plst[0]] *
-                                  bN2[:, :, plst[0]]
-                                  )*Var['u'][:, :, plst[0]]
+                bN2[:, :, plst[0]])*Var['u'][:, :, plst[0]]
         # u, v, etc. were only loaded from plst[3]
 
         # left boundary
-        pVar_xmns = (fID_d[prs].variables['pVar'][plst[3]:, kbott:,
-                     plst[1]].copy())
+        pVar_xmns = (
+                fID_d[prs].variables['pVar'][plst[3]:, kbott:, plst[1]].copy())
         phiKE_xmns[:, kbi:kti] = -pVar_xmns * Var['u'][:, :, plst[1]]
-        phiPE_xmns[:, kbi:kti] = -(0.5 * bVar[:, :, plst[1]] *
-                                   bN2[:, :, plst[1]]
-                                   )*Var['u'][:, :, plst[1]]
+        phiPE_xmns[:, kbi:kti] = -(
+                0.5 * bVar[:, :, plst[1]] * bN2[:, :, plst[1]]
+                )*Var['u'][:, :, plst[1]]
         # the - sign above is because of orientation of outward normal
 
         # Zero flux occurs through top surface
@@ -245,37 +250,42 @@ def MEBTerms(s, setup, plst):  # Mechanichal Energy Budget Terms
         # cf. Notability sheet
         dN2dx = s.S2Loc[kb:kt, plst[1]:plst[0]+1] / (s.dltH * s.Lz)
         dN2dz = s.d2Rdz2[kb:kt, plst[1]:plst[0]+1] * (- s.g / s.rho_0)
-        AdPE[:, kbi:kti, :] = (0.5 * bN2[:, :, plst[1]:plst[0]+1]**2 *
-                               (Var['u'][:, :, plst[1]:plst[0]+1] * dN2dx +
-                               Var['w'][:, :, plst[1]:plst[0]+1] * dN2dz))
+        AdPE[:, kbi:kti, :] = (
+                0.5 * bN2[:, :, plst[1]:plst[0]+1]**2
+                * (Var['u'][:, :, plst[1]:plst[0]+1] * dN2dx
+                + Var['w'][:, :, plst[1]:plst[0]+1] * dN2dz))
 
         # %% ------------------------------------------------------------------
         # Geostrophic Shear Production (GSP)
 
         # GSP = 0.*Var['u']
-        GSP[:, kbi:kti, :] = (Var['v'][:, :, plst[1]:plst[0]+1] *
-                              Var['w'][:, :, plst[1]:plst[0]+1] *
-                              s.S2Loc[kb:kt, plst[1]:plst[0]+1] / s.f)
+        GSP[:, kbi:kti, :] = (
+                Var['v'][:, :, plst[1]:plst[0]+1]
+                * Var['w'][:, :, plst[1]:plst[0]+1]
+                * s.S2Loc[kb:kt, plst[1]:plst[0]+1] / s.f)
 
         # %% ------------------------------------------------------------------
         # Lateral Conversion (LC)
 
-        LC[:, kbi:kti, :] = (Var['u'][:, :, plst[1]:plst[0]+1] *
-                             bN2[:, :, plst[1]:plst[0]+1] *
-                             s.S2Loc[kb:kt, plst[1]:plst[0]+1])
+        LC[:, kbi:kti, :] = (
+                Var['u'][:, :, plst[1]:plst[0]+1]
+                * bN2[:, :, plst[1]:plst[0]+1]
+                * s.S2Loc[kb:kt, plst[1]:plst[0]+1])
 
         # %% ------------------------------------------------------------------
         # Lateral Conversion (LC)
 
-        P2K[:, kbi:kti, :] = (Var['w'][:, :, plst[1]:plst[0]+1] *
-                              bVar[:, :, plst[1]:plst[0]+1])
+        P2K[:, kbi:kti, :] = (
+                Var['w'][:, :, plst[1]:plst[0]+1]
+                * bVar[:, :, plst[1]:plst[0]+1])
 
         # %% ------------------------------------------------------------------
         # Lateral Shear Production (LSP)
 
-        LSP[:, kbi:kti, :] = (Var['v'][:, :, plst[1]:plst[0]+1] *
-                              Var['u'][:, :, plst[1]:plst[0]+1] *
-                              s.f * s.RoGLoc[kb:kt, plst[1]:plst[0]+1])
+        LSP[:, kbi:kti, :] = (
+                s.f * Var['v'][:, :, plst[1]:plst[0]+1]
+                * Var['u'][:, :, plst[1]:plst[0]+1]
+                * s.RoGLoc[kb:kt, plst[1]:plst[0]+1])
 
         tic = print_elpsd('Buch of terms', tic)
 
@@ -299,11 +309,11 @@ def MEBTerms(s, setup, plst):  # Mechanichal Energy Budget Terms
             dotProd = Var[ii][:, :, plst[1]:plst[0]+1]
             ToFD = Var[ii]
 
-            dtKE[:, kbi:kti, :] += DerivLoad(fID_td[prs], dotProd, 'd'+ii+'dt',
-                                             kbott, plst)
+            dtKE[:, kbi:kti, :] += DerivLoad(
+                    fID_td[prs], dotProd, 'd'+ii+'dt', kbott, plst)
 
-            LDzKE[:, kbi:kti, :] -= DerivLoad(fID_d[prs], dotProd,
-                                              'd2'+ii+'dz'+d1, kbott, plst)
+            LDzKE[:, kbi:kti, :] -= DerivLoad(
+                    fID_d[prs], dotProd, 'd2'+ii+'dz'+d1, kbott, plst)
             if s.nuh == 0.:
                 LDhKE[:, kbi:kti, :] -= 0.
             else:
@@ -313,36 +323,36 @@ def MEBTerms(s, setup, plst):  # Mechanichal Energy Budget Terms
             if s.nuz2 == 0.:
                 HDzKE[:, kbi:kti, :] += 0.
             else:
-                HDzKE[:, kbi:kti, :] += DerivLoad(fID_d[prs], dotProd,
-                                                  'd4'+ii+'dz'+d2, kbott, plst)
+                HDzKE[:, kbi:kti, :] += DerivLoad(
+                        fID_d[prs], dotProd, 'd4'+ii+'dz'+d2, kbott, plst)
 
             HDhKE[:, kbi:kti, :] += DerivFour(s.x, ToFD, K, int(d2))
             counter = print_int_elpsd('Dissipation', counter, 8, tic)
 
-        dtPE[:, kbi:kti, :] += (DerivLoad(fID_td[prs],
-                                -s.g*bN2[:, :, plst[1]:plst[0]+1]/s.rho_0,
-                                'ds1dt', kbott, plst))
+        dtPE[:, kbi:kti, :] += DerivLoad(
+                fID_td[prs], -s.g*bN2[:, :, plst[1]:plst[0]+1]/s.rho_0,
+                'ds1dt', kbott, plst)
 
-        LDzPE[:, kbi:kti, :] -= (DerivLoad(fID_d[prs],
-                                 -s.g*bN2[:, :, plst[1]:plst[0]+1]/s.rho_0,
-                                 'd2s1dz'+d1, kbott, plst))
+        LDzPE[:, kbi:kti, :] -= DerivLoad(
+                fID_d[prs], -s.g*bN2[:, :, plst[1]:plst[0]+1]/s.rho_0,
+                'd2s1dz'+d1, kbott, plst)
 
         if s.nuh == 0:
             LDhPE[:, kbi:kti, :] = 0.
         else:
-            LDhPE[:, kbi:kti, :] -= DerivFour(s.x, bVar, K, int(d1)
-                                              ) / s.N2Loc[kb:kt, :]
+            LDhPE[:, kbi:kti, :] -= DerivFour(
+                    s.x, bVar, K, int(d1)) / s.N2Loc[kb:kt, :]
         counter = print_int_elpsd('Dissipation', counter, 8, tic)
 
         if s.nuz2 == 0.:
             HDzPE[:, kbi:kti, :] = 0.
         else:
-            HDzPE[:, kbi:kti, :] = (DerivLoad(fID_d[prs],
-                                    -s.g*bN2[:, :, plst[1]:plst[0]+1]/s.rho_0,
-                                    'd4s1dz'+d2, kbott, plst))
+            HDzPE[:, kbi:kti, :] = DerivLoad(
+                    fID_d[prs], -s.g*bN2[:, :, plst[1]:plst[0]+1]/s.rho_0,
+                    'd4s1dz'+d2, kbott, plst)
 
-        HDhPE[:, kbi:kti, :] = DerivFour(s.x, bVar, K, int(d2)
-                                         ) / s.N2Loc[kb:kt, :]
+        HDhPE[:, kbi:kti, :] = DerivFour(
+                s.x, bVar, K, int(d2)) / s.N2Loc[kb:kt, :]
         counter = print_int_elpsd('Dissipation', counter, 8, tic)
 
         # dissipation of the thermal wind
@@ -431,7 +441,7 @@ def MEBTerms(s, setup, plst):  # Mechanichal Energy Budget Terms
                        'LDz': LDzKEtot,
                        'HDz': HDzKEtot,
                        'LDh': LDhKEtot,
-                       'HDh': HDhPEtot}
+                       'HDh': HDhKEtot}
 
     dic_of_PE_terms = {'t': t,
                        'pUpls': PHIpPE,
@@ -468,9 +478,9 @@ def MEBTerms(s, setup, plst):  # Mechanichal Energy Budget Terms
 def plot_one_budget(KET, PET, MET, s, printON, base, nm, t_strt):
 
     # rc('text', usetex=True)
-    font = {'size': 16}
-    rc('font', **font)
-    rc('lines', linewidth=2)
+    font = {'size': 10}
+    mpl.rc('font', **font)
+    mpl.rc('lines', linewidth=2)
     # lwd=2
 
     RES_KE = (KET['dEdt'] +
@@ -545,18 +555,23 @@ def plot_one_budget(KET, PET, MET, s, printON, base, nm, t_strt):
     plt.xlabel("$tf/2\pi$")
     plt.ylabel("Power Per Unit Density [$m^4/s^3$]")
     plt.title("Mechanical Energy Budget")
-    plt.legend(loc='upper right')
+    # plt.legend(loc='upper right')
     # plt.tight_layout()
-    plt.show()
 
-    mng = plt.get_current_fig_manager()
-    mng.window.showMaximized()
-    get_current_fig_manager().window.raise_()
+    # mng = plt.get_current_fig_manager()
+    # mng.window.showMaximized()
+    # get_current_fig_manager().window.raise_()
     # mng.frame.Maximize(True)
 
     if printON:
-        plt.savefig(base + nm + '-MEB.png', format="png")
+        # plt.savefig(base + nm + '-MEB.png', format="png")
         plt.savefig(base + nm + '-MEB.pdf', format="pdf")
+    else:
+        plt.show()
+        # mng = plt.get_current_fig_manager()
+        # mng.window.showMaximized()
+        # get_current_fig_manager().window.raise_()
+        # mng.frame.Maximize(True)
 
     # %% ----------------------------------------------------------------------
 
@@ -592,18 +607,19 @@ def plot_one_budget(KET, PET, MET, s, printON, base, nm, t_strt):
     plt.xlabel("$tf/2\pi$")
     plt.ylabel("Power Per Unit Density [$m^4/s^3$]")
     plt.title("Kinetic Energy Budget")
-    plt.legend(loc='upper right')
+    # plt.legend(loc='upper right')
     # plt.tight_layout()
-    plt.show()
-
-    mng = plt.get_current_fig_manager()
-    mng.window.showMaximized()
-    get_current_fig_manager().window.raise_()
-    # mng.frame.Maximize(True)
 
     if printON:
-        plt.savefig(base + nm + '-KEB.png', format="png")
+        # plt.savefig(base + nm + '-KEB.png', format="png")
         plt.savefig(base + nm + '-KEB.pdf', format="pdf")
+    else:
+        plt.show()
+        # mng = plt.get_current_fig_manager()
+        # mng.window.showMaximized()
+        # get_current_fig_manager().window.raise_()
+        # mng.frame.Maximize(True)
+
     # %% ----------------------------------------------------------------------
 
     # fig = plt.figure(nm)
@@ -638,18 +654,18 @@ def plot_one_budget(KET, PET, MET, s, printON, base, nm, t_strt):
     plt.xlabel("$tf/2\pi$")
     plt.ylabel("Power Per Unit Density [$m^4/s^3$]")
     plt.title("Available Potential Energy Budget")
-    plt.legend(loc='upper right')
+    # plt.legend(loc='upper right')
     # plt.tight_layout()
-    plt.show()
-
-    mng = plt.get_current_fig_manager()
-    mng.window.showMaximized()
-    get_current_fig_manager().window.raise_()
-    # mng.frame.Maximize(True)
 
     if printON:
-        plt.savefig(base + nm + '-PEB.png', format="png")
+        # plt.savefig(base + nm + '-PEB.png', format="png")
         plt.savefig(base + nm + '-PEB.pdf', format="pdf")
+    else:
+        plt.show()
+        # mng = plt.get_current_fig_manager()
+        # mng.window.showMaximized()
+        # get_current_fig_manager().window.raise_()
+        # mng.frame.Maximize(True)
 
 
 # %% --------------------------------------------------------------------------
@@ -667,7 +683,7 @@ else:
     raise NameError(
         'This is a new user or computer: what is the base directory?')
 
-saveON = 1  # 1 to compute and save, 0 to just load
+saveON = 0  # 1 to compute and save, 0 to just load
 plotON = 1  # 1 to plt spaghetti, 0 to not
 printON = 1
 
@@ -677,10 +693,10 @@ XcldLst = ['12R09']  # , '09R09', '09R10', '11R09', '12R10']
 
 for ii in ['04']:
     for iN in ['50']:
-        for iF in ['12']:  # ['09', '10', '11', '12']:
-            for iR in ['14']:  # ['09', '10', '12', '14']:
+        for iF in ['09', '10', '11', '12']:
+            for iR in ['09', '10', '12', '14']:
 
-                setup = 'N' + iN + 'F' + iF + 'R' + iR + '-' + ii + '-HF'
+                setup = 'N' + iN + 'F' + iF + 'R' + iR + '-' + ii  # + '-HF'
 
                 if XcldLst.count(setup[4:9]) == 1:
                     continue
@@ -693,7 +709,7 @@ for ii in ['04']:
                 d2pkl = pickle.load(pkl_file)
                 pkl_file.close()
 
-                s = dictionary_to_class(**d2pkl)
+                s = DictionaryToClass(**d2pkl)
                 del d2pkl
 
                 # %% ----------------------------------------------------------
@@ -709,7 +725,7 @@ for ii in ['04']:
 
                 # %% ----------------------------------------------------------
                 if saveON:
-                    KET, PET = MEBTerms(s, root_dir, boundaries_list)
+                    KET, PET = MEBTerms(root_dir, boundaries_list)
 
                 if plotON:
                     if not saveON:
